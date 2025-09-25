@@ -47,3 +47,21 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Large model objects
+*.rds
+output/models/*.rds
+
+# Quarto outputs  
+*.html
+_site/
+.quarto/
+
+# Generated documents
+*.pdf
+*.docx
+manuscript/*.pdf
+manuscript/*.html
+
+# Temporary files
+*.log
