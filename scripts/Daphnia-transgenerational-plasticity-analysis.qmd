@@ -1,0 +1,1803 @@
+---
+title: "Predator induced phenotypes are inherited over four generations in genetically identical Daphnia lumholtzi"
+subtitle: "Statistical Analysis Methods Report"
+author: 
+  - name: Shannon N. Snyder
+    affiliation:
+      - Department of Biology, University of Oregon
+      - WAC Knight Campus for Advancing Scientific Impact, University of Oregon
+date: "2025-09-20"
+format: 
+  pdf:
+    documentclass: article
+    geometry: margin=1in
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    number-sections: true
+    colorlinks: true
+#bibliography: references.bib
+execute:
+  echo: true
+  message: false
+  warning: false
+  fig-width: 6
+  fig-height: 4
+  dpi: 300
+---
+
+# Overview 
+
+This document details the statistical analysis conducted as a part of this manuscript: [insert-link-here](insert-link-here). Published in \[Journal\] on \[date\]. \
+\
+The manuscript documents transgenerational phenotypic plasticity in 4 generations following predation exposure in *Daphnia lumholtzi* (collected 2019 Saguaro Lake, Arizona, USA). Experiment was conducted in the laboratory of William A. Cresko at the University of Oregon.
+
+# Abstract
+
+Predator-induced morphological defenses in *Daphnia lumholtzi* can persist across multiple generations through non-genetic mechanisms. Using clonal lineages exposed to fish-conditioned medium only in the F0 generation, we tracked headspine and tailspine (accounting for body length as a covariate) morphology through F5. Induced traits persisted through F4 before regressing in F5, highlighting the transient nature of transgenerational plasticity and the importance of ancestral environments in shaping phenotypic variation.
+
+# Introduction
+
+Phenotypic plasticity allows organisms to adapt rapidly to environmental changes without changes in allele distibrution. In *Daphnia*, predator-induced defenses such as elongated spines or helmets are classic examples of plastic traits. While within-generation plasticity is well documented, the persistence of these traits across generations remains unclear. This study investigates how long predator-induced morphologies persist in *Daphnia lumholtzi* after cue removal, using clonal lineages to isolate environmental effects from genetic variation.
+
+## Study Design and Variables
+
+-   **Sample:** Individual Daphnia, measured every other day over lifespan (repeated measures).
+-   **Treatment:** F0 only - half exposed to fish-conditioned medium, half in control medium; all descendants reared in control.
+-   **Generations:** F0 (fish exposure), F3-F5 (unexposed)
+-   **Morphometrics:** `headspine`, `tailspine`, `bodylength`, `eyediameter`, `totalbodysize` (all in microns).
+-   **Line:** Founder line identity, invariant within clonal pedigree. Determinant of treatment (odds 001,003,005,007,009: predator exposed)
+-   **ID:** Unique individual identity.
+
+# Materials and Methods
+
+## Methods Overview
+
+Clonal *Daphnia lumholtzi* were exposed to fish-conditioned medium in the F0 generation and reared in control medium for five subsequent generations. Morphological traits were measured every other day in F0, F3, F4, and F5. Statistical analyses included frequentist and Bayesian mixed-effects models to assess treatment effects on headspine and tailspine length, controlling for body size and and repeated measures. Growth trajectories and survivorship were also analyzed to rule out size-selective mortality.
+
+## Experimental Design
+
+**Overview.** To explore dynamics of predation induced phenotypes within and across generations, we reared five lineages of predation exposed and four lineages of unexposed Daphnia lumholtzi for five generations following initial predation exposure and cue removal. Daphnia were individually grown in 50 mL beakers containing 30 mL of fish conditioned or standard artificial lake medium (COMBO; Kilham et al., 1998). Every other day during the F0, F3, F4, and F5 generations, individual D. lumholtzi were imaged for morphological measurements (ImageJ), media was exchanged, and algae was replenished with 85,000 cells of a 1:1 mixture of Scenedesmus obliquus and Chlorella vulgaris, hereby referred to as the standard algae mixture. See @fig-schematic for experimental schematics.
+
+**Daphnia Lumholtzi Clone.** This clone was specifically chosen for its ability to develop novel headspines and tailspines in response to vertebrate predation. Daphnia lumholtzi clones were collected in the summer of 2019 from Saguaro Lake, AZ, USA. D. lumholtzi Saguaro Lake (SAG) clones were generously donated by Michael Lynch.
+
+**Common Garden Rearing.** D. lumholtzi clones were reared for 6 months in artificial lake media (COMBO) and fed Scenedesmus obliquus and Chlorella vulgaris ab libitum to dull residual effects of lake predation. Prior to experimental perturbations, ancestral D. lumholtzi were reared for three generations in COMBO media and fed a standard algae mixture of S. obliquus and C. vulgaris to minimize the influence of maternal effects on experimental generations.
+
+**Fish and Control Media Preparation.** To prepare fish (induction) and control media, artificial lake media was conditioned with five stickleback fish for three days prior to filtration with a .045 μm filter. Fish were fed 10 D. lumholtzi and 10 D. magna each day. To create control medium, artificial lake media without fish conditioning was created in congruence with fish media. Media was frozen and thawed prior to use.
+
+**Initial F0 Exposure and Experimental Conditions.** From the third generation of common garden reared daphnia, one mother was selected due to observed clutch survivability and clutch size. Nine neonates born within 24 hours from the same mother were isolated and randomly assigned to treatment groups, either fish exposure or control. Animals were reared individually in a 50 mL plastic beaker with 30mL of the appropriate medium and fed 5 mL standard algae mixture every other day. Individual daphnia were staged, imaged, and returned to fresh media with algae every other day.
+
+**Generational Propagation.** Upon reproduction, up to six neonates were randomly collected and reared individually in 50 mL beakers containing 30 mL of control media only, to probe for the inheritance of predation induced effects after predator removal. If the first clutch did not produce a viable lineage, the next clutch viable clutch was utilized. See @fig-schematic for sample sizes.
+
+**Imaging and Data Collection.** Every other day, animals in the F0, F3, F4, and F5 generation were staged on a glass slide and imaged using cellSenseEntry (Olympus Life Science). Morphological measurements of headspine (tip of spine to top of compound eye), body length (top of eye to base of tail), tailspine (base of tail to tip of tailspine), diameter of eye, total body length (tip of headspine to tip of tailspine) were collected (see @fig-measurements) using ImageJ (Schneider et al., 2012).
+
+## Data Acquisition
+
+Repeated imaging and calibrated measurement of each live Daphnia were conducted at 2-day intervals using confocal microscope and ImageJ.\
+\
+The following code loads the dataset and performs various data processing steps. See below for details.
+
+```{r}
+#| label: setup 
+#| include: true
+
+# Set reproducible options, import libraries, and read/process data
+library(tidyverse)      # (dplyr, ggplot2, tidyr) for data manipulation
+library(brms)           # Bayesian mixed models
+library(lme4)           # Linear mixed models
+library(lmerTest)       # p-values for lmer
+library(broom.mixed)    # Clean model output
+library(performance)    # R^2 for mixed models
+library(ggpubr)         # Plot grids and base annotation
+library(RColorBrewer)   # Color palettes
+library(patchwork)      # Combine plots
+library(gghighcontrast) # Extra high-contrast themes (for publishing)
+library(knitr)
+library(emmeans)
+library(multcomp)
+library(report)
+library(effects)
+library(gridExtra)
+
+set.seed(123)           # For reproducibility
+
+# Import Data
+spines <- read.csv("../data/spines.csv", stringsAsFactors = TRUE)
+spines <- na.omit(spines)
+
+# Data Tidying
+num_vars <- c("headspine", "tailspine", "bodylength")
+spines[num_vars] <- lapply(spines[num_vars], function(x) as.numeric(as.character(x)))
+
+# Total bodysize calculation
+spines$totalbodysize <- rowSums(spines[c("headspine", "tailspine", "bodylength")], na.rm = TRUE)
+
+# ID and categorical factors cleanup
+spines <- spines %>%
+  mutate(line = as.character(line),
+         sample = as.factor(as.character(sample)),
+         generation = as.factor(as.character(generation)),
+         ID = factor(as.character(ID)),
+         age = as.numeric(as.character(age)))
+
+# Treatment assignment (Original F0 lines 001,003,005,007,009 are induced)
+spines$treatment <- as.factor(ifelse(as.numeric(as.character(spines$line)) %% 2 == 1, "induced", "control"))
+
+# Limit to relevant generations for analysis: F0-F5
+spines <- filter(spines, generation %in% c('1','2','3','4','5','6'))
+
+# Ratio for relative size (optional - not used in final analysis)
+spines$ratio <- (spines$totalbodysize - spines$bodylength) / spines$bodylength
+
+# Subsetting for analyses (by generation/age interval)
+spines_cap20 <- spines %>% filter(age >= 3 & age <= 20) %>% mutate(generation = as.numeric(generation))
+spines_cap10 <- spines %>% filter(age >= 3 & age <= 10) %>% mutate(generation = as.numeric(generation))
+
+# Per-generation data for modeling
+for (g in 1:6) assign(paste0("spines_cap20_F", g-1), filter(spines_cap20, generation == g))
+
+# Color Palette (Okabe-Ito + greyscale for clarity)
+okabe_ito <- c(control="#7E1E9C", induced="#009E73")
+shapes    <- c(control=1, induced=16)
+# Greyscale for model types
+model_cols <- c(Bayesian="black", Linear="grey30") 
+
+# generate plots seperately 
+
+knit_print.gtable <- function(x, ...) {
+  grid::grid.newpage()
+  grid::grid.draw(x)
+  invisible(x)
+}
+
+
+
+```
+
+# **Results and Figures**
+
+Predator cue exposure in F0 significantly increased headspine and tailspine length. These induced traits persisted in F3 and F4, with measurable differences between control and induced lineages. By F5, trait differences disappeared, indicating a finite duration of transgenerational plasticity. Growth rates and survivorship analyses confirmed that trait differences were not due to selective mortality or developmental timing.
+
+## **Experimental Design**
+
+```{r out.width="85%"}
+#| label: fig-schematic  
+#| fig-cap: "Illustrative schematic of clonal propagation and treatment regime."
+#| echo: false
+
+knitr::include_graphics("../01.figures/Figure1.png")
+```
+
+## **Morphological Measurements**
+
+```{r, , out.width="75%"}
+#| label: fig-measurements
+#| fig-cap: "Schematic showing how headspine, tailspine and body length were measured."  
+#| echo: false
+
+knitr::include_graphics("../01.figures/Figure2.png")
+```
+
+## **Ontogenetic Trajectories Reveal Distinct Patterns**
+
+We plotted headspine, tailspine, bodylength and total body size trajectories using a General Additive Model (GAM) across all age points.
+
+```{r}
+#| label: fig-trajectories
+#| fig-cap: "Age-dependent morphological measurements reveal distinct patterns for defensive and somatic traits. Scatterplots display individual measurements of (A) body length, (B) total body size, (C) headspine length, and (D) tailspine length (in microns) as a function of age (in days). Green line represents locally averaged (GAM) trends for induced lineage (F0 exposed to fish-conditioned media); purple line represents control lineage (no F0 exposure). Somatic traits show rapid early growth followed by plateaus, while defensive traits elongate and then shorten with age."
+#| fig-width: 10
+#| fig-height: 8
+
+# COLOR PALETTE CONTROL
+mycolors <- c(
+  "control" = "#7E1E9C",   # purple
+  "induced" = "#009E73"    # green
+)
+
+# Plot 1: Body length
+plot1 <- ggplot(spines, aes(x = age, y = bodylength)) + 
+  geom_point(size = 1, alpha = 0.15, color = "black") +  
+  geom_smooth(
+    method = "gam", formula = y ~ s(x), se = FALSE,
+    aes(color = treatment), size = 1
+  ) +
+  scale_color_manual(values = mycolors) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    x = "Age (days)",
+    y = "Body length (µm)",
+    color = "Treatment"
+  )
+
+# Plot 2: Total body size
+plot2 <- ggplot(spines, aes(x = age, y = totalbodysize)) + 
+  geom_point(size = 1, alpha = 0.15, color = "black") +  
+  geom_smooth(
+    method = "gam", formula = y ~ s(x), se = FALSE,
+    aes(color = treatment), size = 1
+  ) +
+  scale_color_manual(values = mycolors) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    x = "Age (days)",
+    y = "Total size (µm)",
+    color = "Treatment"
+  )
+
+# Plot 3: Headspine
+plot3 <- ggplot(spines, aes(x = age, y = headspine)) + 
+  geom_point(size = 1, alpha = 0.15, color = "black") +  
+  geom_smooth(
+    method = "gam", formula = y ~ s(x), se = FALSE,
+    aes(color = treatment), size = 1
+  ) +
+  scale_color_manual(values = mycolors) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    x = "Age (days)",
+    y = "Headspine (µm)",
+    color = "Treatment"
+  )
+
+# Plot 4: Tailspine
+plot4 <- ggplot(spines, aes(x = age, y = tailspine)) + 
+  geom_point(size = 1, alpha = 0.15, color = "black") +  
+  geom_smooth(
+    method = "gam", formula = y ~ s(x), se = FALSE,
+    aes(color = treatment), size = 1
+  ) +
+  scale_color_manual(values = mycolors) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    x = "Age (days)",
+    y = "Tailspine (µm)",
+    color = "Treatment"
+  )
+
+# Combine into a 2x2 grid with A-D labels
+ggarrange(
+  plot1, plot2, plot3, plot4,
+  ncol = 2, nrow = 2,
+  labels = c("A", "B", "C", "D"),
+  font.label = list(size = 14)
+)
+```
+
+**Main Finding:** Distinct ontogenetic patterns emerge for somatic versus defensive traits: while body length and total size plateau in mid-life, the defensive headspine and tailspine traits to elongate and the shorten with age, indicating persistent and dynamic regulation of defensive morpholgies throughout the Daphnia lifespan.
+
+Given the parabolic trends of both headspine and tailspine, we limited to the data to those less than 20 days of age, representing a post-reproductive timepoint in which the animal mostly has reached its peak body size. We also excluded animals which were one day old, as many Daphnia did not reach a second imaging timepoint at day 3.
+
+## **Statistical Modeling: Transgenerational Effects**
+
+### **Linear Mixed and Bayesian Models**
+
+**Objective:** Quantify the treatment effect ("induced" vs. "control") on headspine and tailspine length in F0 and in subsequent generations, accounting for repeated measures.
+
+**Methods:** We fit both frequentist (linear mixed effects) and Bayesian models, with:
+
+-   Fixed effects: Treatment, body length covariate
+
+-   Random intercepts: Individual sample
+
+-   Response: headspine or tailspine
+
+-   Cases: F0, F3, F4, F5
+
+-   Model formula: spine \~ treatment + bodylength + (1\|sample)
+
+-   Individuals under 20 days of age and greater than 1 day
+
+```{r}
+#| label: statistical-models
+#| include: true
+
+# Define generations and traits
+generations <- c("F0", "F3", "F4", "F5")
+spine_traits <- c("headspine", "tailspine")    
+bayesian_models <- list()
+linear_models <- list()
+
+# Function to fit Bayesian models
+fit_bayesian_model <- function(data, spine) {
+  brm(
+    formula = as.formula(paste0(spine, " ~ treatment + bodylength + (1|sample)")),
+    family = "student",
+    data = data,
+    warmup = 2000,
+    iter = 5000,
+    cores = 2,
+    chains = 3,
+    seed = 123
+  )
+}
+
+# Function to fit linear mixed models
+fit_linear_model <- function(data, spine) {
+  lmer(
+    formula = as.formula(paste0(spine, " ~ treatment + bodylength + (1|sample)")),
+    data = data
+  )
+}
+
+# Check if models need to be run
+run_models <- FALSE
+for (gen in generations) {
+  for (spine in spine_traits) {  # Changed here
+    bayes_file <- paste0("bayesian_model_", gen, "_", spine, ".rds")
+    linear_file <- paste0("linear_model_", gen, "_", spine, ".rds")
+    if (!file.exists(bayes_file) || !file.exists(linear_file)) {
+      run_models <- TRUE
+      break
+    }
+  }
+  if (run_models) break
+}
+
+# Only fit models if needed
+if (run_models) {
+  cat("Fitting models (this may take a while)...\n")
+  
+  for (gen in generations) {
+    data_name <- paste0("spines_cap20_", gen)
+    if (exists(data_name)) {
+      data <- get(data_name)
+      for (spine in spine_traits) {  # Changed here
+        cat("Fitting", gen, spine, "models...\n")
+        
+        # Fit models
+        bayes_mod <- fit_bayesian_model(data, spine)
+        linear_mod <- fit_linear_model(data, spine)
+        
+        bayesian_models[[paste0(gen, "_", spine)]] <- bayes_mod
+        linear_models[[paste0(gen, "_", spine)]] <- linear_mod
+        
+        # Save model objects to file
+        saveRDS(bayes_mod, file = paste0("bayesian_model_", gen, "_", spine, ".rds"))
+        saveRDS(linear_mod, file = paste0("linear_model_", gen, "_", spine, ".rds"))
+      }
+    }
+  }
+} else {
+  cat("Loading existing models...\n")
+}
+
+# Load all models (whether just fitted or previously saved)
+for (gen in generations) {
+  for (spine in spine_traits) {  # Changed here
+    bayes_file <- paste0("bayesian_model_", gen, "_", spine, ".rds")
+    linear_file <- paste0("linear_model_", gen, "_", spine, ".rds")
+    
+    if (file.exists(bayes_file)) {
+      bayesian_models[[paste0(gen, "_", spine)]] <- readRDS(bayes_file)
+    }
+    if (file.exists(linear_file)) {
+      linear_models[[paste0(gen, "_", spine)]] <- readRDS(linear_file)
+    }
+  }
+}
+```
+
+```{r}
+#| label: fig-transgenerational
+#| fig-cap: "Predicted spine lengths by generation and treatment from linear and Bayesian models. Predicted mean headspine length (top row) and tailspine length (bottom row) for Daphnia in control and induced lineages across generations (F0, F3, F4, F5). Points represent model-predicted means ± standard error, with filled circles for Bayesian hierarchical model estimates and open circles for linear mixed-effect model estimates. Both model frameworks show increased spine length in induced (fish-conditioned) lineages and yield qualitatively similar inferences, supporting robustness of transgenerational treatment effects."
+#| fig-width: 10
+#| fig-height: 6
+
+# Build predictions dataset
+library(dplyr)
+library(purrr)
+library(brms)      # for posterior_epred
+library(arm)       # for fixef and vcov
+
+# Helper: get mean bodylength for each generation
+mean_bodylengths <- map_dfr(generations, function(gen) {
+  data_name <- paste0("spines_cap20_", gen)
+  if (exists(data_name)) {
+    data <- get(data_name)
+    tibble(generation = gen, bodylength = mean(data$bodylength, na.rm = TRUE))
+  } else {
+    tibble(generation = gen, bodylength = NA_real_)
+  }
+})
+
+get_predictions <- function(model, model_type, gen, spine, bodylength) {
+  data_name <- paste0("spines_cap20_", gen)
+  if (!exists(data_name)) stop(paste("Data", data_name, "not found!"))
+  orig_data <- get(data_name)
+  sample_levels <- levels(as.factor(orig_data$sample))
+  new_sample <- "new_sample"
+  all_levels <- c(sample_levels, new_sample)
+  
+  # Use character for treatment to avoid factor level issues
+  newdata <- tibble(
+    treatment = c("control", "induced"),
+    bodylength = bodylength,
+    sample = factor(new_sample, levels = all_levels)
+  )
+  
+  if (tolower(model_type) == "bayesian") {
+    preds <- posterior_epred(model, newdata = newdata, re_formula = NA)
+    est <- colMeans(preds)
+    se <- apply(preds, 2, sd)
+  } else {
+    mm <- model.matrix(~ treatment + bodylength, newdata)
+    fe <- fixef(model)
+    est <- as.numeric(mm %*% fe)
+    se <- sqrt(diag(mm %*% vcov(model) %*% t(mm)))
+  }
+  
+  tibble(
+    generation = gen,
+    spine = spine,
+    model = model_type,
+    treatment = newdata$treatment,  # character, not factor
+    estimate = est,
+    std.error = se
+  )
+}
+
+# Build predictions data set
+predictions <- map_dfr(generations, function(gen) {
+  bodylength <- mean_bodylengths %>% filter(generation == gen) %>% pull(bodylength)
+  map_dfr(spine_traits, function(spine) {  # Changed from 'spines' to 'spine_traits'
+    # Bayesian
+    bayes_key <- paste0(gen, "_", spine)
+    bayes_model <- bayesian_models[[bayes_key]]
+    bayes_pred <- if (!is.null(bayes_model)) get_predictions(bayes_model, "Bayesian", gen, spine, bodylength) else NULL
+    # Linear
+    lin_model <- linear_models[[bayes_key]]
+    lin_pred <- if (!is.null(lin_model)) get_predictions(lin_model, "Linear", gen, spine, bodylength) else NULL
+    bind_rows(bayes_pred, lin_pred)
+  })
+})
+
+# Prepare data: ensure correct factor levels and labels
+predictions <- predictions %>%
+  mutate(
+    generation = factor(generation, levels = c("F0", "F3", "F4", "F5")),
+    spine = factor(spine, levels = c("headspine", "tailspine"), labels = c("Headspine", "Tailspine")),
+    model = factor(model, levels = c("Bayesian", "Linear")),
+    treatment = factor(treatment, levels = c("control", "induced"), labels = c("Control", "Induced"))
+  )
+
+# Create the plot
+ggplot(predictions, aes(x = treatment, y = estimate, shape = model, color = model, group = model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error),
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  facet_grid(spine ~ generation, scales = "free_y") +
+  scale_shape_manual(
+    values = c("Bayesian" = 16, "Linear" = 1)
+  ) +
+  scale_color_grey(start = 0.2, end = 0.25) +
+  labs(
+    x = "Treatment",
+    y = "Predicted Spine Length (microns)",
+    color = "Model",
+    shape = "Model"
+  ) +
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 12),
+    axis.text.x = element_text(size = 11),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    legend.position = "bottom"
+  )
+```
+
+```{r}
+#| label: extract-model-results
+#| include: false
+
+# Function to extract Bayesian model statistics
+extract_bayesian_stats <- function(model, gen, spine) {
+  # Get summary WITH quantiles for credible intervals
+  summary_df <- posterior_summary(model, variable = "b_treatmentinduced", probs = c(0.025, 0.975))
+  
+  # Get R-squared values robustly using positional indexing
+  r2_values <- bayes_R2(model)
+  r2_marg <- r2_values[1, "Estimate"]
+  r2_cond <- if (nrow(r2_values) > 1) r2_values[2, "Estimate"] else NA_real_
+
+  # Create the data frame, preserving original columns and adding new ones
+  treatment_row <- data.frame(
+    # --- Original columns are preserved for your other code ---
+    generation = gen,
+    spine = spine,
+    term = "treatmentinduced",
+    estimate = summary_df["b_treatmentinduced", "Estimate"],
+    std.error = summary_df["b_treatmentinduced", "Est.Error"],
+    r2_marginal = r2_marg,
+    p_value = NA, # Preserving this column as in your original function
+    
+    # --- New columns are ADDED for the final results table ---
+    ci_lower = summary_df["b_treatmentinduced", "Q2.5"],
+    ci_upper = summary_df["b_treatmentinduced", "Q97.5"],
+    r2_conditional = r2_cond
+  )
+  return(treatment_row)
+}
+
+# Function to extract linear model statistics
+extract_linear_stats <- function(model, gen, spine) {
+  tidy_df <- broom.mixed::tidy(model, effects = "fixed")
+  anova_res <- anova(model)
+  f_row <- anova_res[grepl("treatment", rownames(anova_res)), ]
+  p_val <- if (nrow(f_row) > 0) f_row$`Pr(>F)` else NA
+  
+  r2_vals <- suppressWarnings(performance::r2(model))
+  treatment_row <- tidy_df %>%
+    dplyr::filter(grepl("treatment", term)) %>%
+    dplyr::mutate(
+      generation = gen,
+      spine = spine,
+      r2_marginal = r2_vals$R2_marginal,
+      r2_conditional = r2_vals$R2_conditional,
+      p_value = p_val
+    )
+  
+  if (nrow(treatment_row) == 0) {
+    treatment_row <- tibble::tibble(
+      generation = gen, spine = spine, term = "treatmentinduced",
+      estimate = NA_real_, std.error = NA_real_,
+      r2_marginal = r2_vals$R2_marginal,
+      r2_conditional = r2_vals$R2_conditional,
+      p_value = p_val
+    )
+  }
+  return(treatment_row)
+}
+
+# Extract results for each spine type
+results_tables_bayes <- list()
+results_tables_linear <- list()
+
+for (spine in spine_traits) {
+  # Bayesian
+  model_results_bayes <- lapply(generations, function(gen) {
+    model_key <- paste0(gen, "_", spine)
+    if (!is.null(bayesian_models[[model_key]])) {
+      extract_bayesian_stats(bayesian_models[[model_key]], gen, spine)
+    } else {
+      NULL
+    }
+  })
+  results_tables_bayes[[spine]] <- dplyr::bind_rows(model_results_bayes)
+  
+  # Linear
+  model_results_linear <- lapply(generations, function(gen) {
+    model_key <- paste0(gen, "_", spine)
+    if (!is.null(linear_models[[model_key]])) {
+      extract_linear_stats(linear_models[[model_key]], gen, spine)
+    } else {
+      NULL
+    }
+  })
+  results_tables_linear[[spine]] <- dplyr::bind_rows(model_results_linear)
+}
+```
+
+### Table 1: Linear Mixed-Effects Model Results
+
+```{r}
+#| label: tbl-linear-results
+#| tbl-cap: "Linear mixed-effects model results for headspine and tailspine length across generations. Models were fit separately by generation for individuals ≤ 20 days old. Each row represents a unique combination of generation and spine type. Gen indicates the generation of the experimental cohort (e.g., F0, F3, etc.), and Spine refers to the type of spine measured, either headspine or tailspine. Est. Difference (μm) is the estimated mean difference in spine length (in micrometers) between predator-induced and control treatments, where positive values indicate longer spines in induced individuals. Std_Error is the standard error of the estimated difference. R² marginal and R² conditional represent the proportion of variance explained by fixed effects alone and by both fixed and random effects, respectively. The F statistic and associated P value test the significance of the treatment effect; p-values < 0.05 indicate statistically significant differences. See Methods for full model specification and random effect structure. See Supplemental Table 1 for model evaluation."
+
+library(knitr)
+library(dplyr)
+
+# Check if the data exists and render the table
+if (exists("results_tables_linear") && !is.null(results_tables_linear)) {
+  
+  linear_results <- list()
+  for (spine_type in c("headspine", "tailspine")) {
+    linear_data <- results_tables_linear[[spine_type]]
+    if (!is.null(linear_data)) {
+      for (i in 1:nrow(linear_data)) {
+        p_val <- linear_data$p_value[i]
+        p_formatted <- if (is.na(p_val)) "—" else {
+          if (p_val < 0.001) "< 0.001" else if (p_val < 0.01) "< 0.01" else if (p_val < 0.05) "< 0.05" else as.character(round(p_val, 3))
+        }
+        linear_results[[length(linear_results) + 1]] <- list(
+          Spine = tools::toTitleCase(spine_type),
+          Generation = linear_data$generation[i],
+          Estimate = round(linear_data$estimate[i], 2),
+          SE = round(linear_data$std.error[i], 2),
+          R2_marginal = round(linear_data$r2_marginal[i], 3),
+          R2_conditional = round(linear_data$r2_conditional[i], 3),
+          p_value = p_formatted
+        )
+      }
+    }
+  }
+  
+  if (length(linear_results) > 0) {
+    # Create the data frame using bind_rows (cleaner approach)
+    linear_table <- bind_rows(linear_results)
+    
+    # Render the table
+    kable(linear_table, 
+          col.names = c("Spine", "Generation", "Est. Difference (μm)", "Std. Error", "R² marginal", "R² conditional", "P value"),
+          booktabs = TRUE,
+          align = 'lcccccc',
+          row.names = FALSE)
+  }
+
+} else {
+  # Warning message if the required object is missing
+  cat("Warning: The `results_tables_linear` object was not found. Please ensure the model analysis chunks have been run successfully before this chunk.")
+}
+```
+
+```{r}
+
+#| label: tbl-linear-results-save-word
+#| include: false  # <-- This makes the chunk run silently
+
+library(flextable)
+library(officer)
+
+# This chunk's ONLY job is to save the Word document as a side-effect.
+if (exists("linear_table")) {
+  ft_results <- flextable(linear_table)
+  ft_results <- set_header_labels(ft_results,
+    R2_marginal = "R² marginal",
+    R2_conditional = "R² conditional",
+    p_value = "p-value"
+  )
+  ft_results <- ft_results %>%
+    autofit() %>%
+    theme_booktabs() %>%
+    set_caption("Linear mixed-effects model results: Treatment effects across generations") %>%
+    align(j = ~ . -Spine - Generation, align = "center", part = "all")
+    
+  doc <- read_docx()
+  doc <- body_add_flextable(doc, value = ft_results)
+  file_path <- "linear_model_results.docx"
+  print(doc, target = file_path)
+}
+```
+
+### Table 2: Bayesian Hierarchical Model Results
+
+```{r}
+#| label: tbl-bayesian-results-display
+#| tbl-cap: "Bayesian hierarchical model results for headspine and tailspine length across generations. Models were fit separately by generation for individuals less than 20 days old. Each row represents a unique combination of generation and spine type. “Gen” indicates the generation of the experimental cohort, and “Spine” refers to the type of spine measured - either headspine or tailspine. “Est. Difference (μm)” is the posterior mean estimate of the difference in spine length (in micrometers) between predator-induced and control treatments, with positive values indicating elongation in induced individuals. “Std_Error” is the standard error of the posterior estimate. “Bayesian R²” represents the proportion of variance explained by  the full model.95% upper and lower confidence intervals represented by 95% CI lower and upper. See Methods for full model specification and prior structure, and Supplemental Table 2 for model evalutation."
+#| echo: false
+#| results: 'asis'
+#| message: false
+#| warning: false
+
+library(knitr)
+
+# Check if the necessary data exists
+if (exists("results_tables_bayes") && !is.null(results_tables_bayes)) {
+  
+  # Initialize empty result list
+  bayes_results <- list()
+  
+  # Process each spine type
+  for (spine_type in c("headspine", "tailspine")) {
+    if (!is.null(results_tables_bayes[[spine_type]])) {
+      bayes_data <- results_tables_bayes[[spine_type]]
+      for (i in 1:nrow(bayes_data)) {
+        bayes_results[[length(bayes_results) + 1]] <- list(
+          Spine = tools::toTitleCase(spine_type),
+          Generation = bayes_data$generation[i],
+          Estimate = round(bayes_data$estimate[i], 2),
+          SE = round(bayes_data$std.error[i], 2),
+          R2_marginal = round(bayes_data$r2_marginal[i], 3),
+          CI_lower = round(bayes_data$ci_lower[i], 2),
+          CI_upper = round(bayes_data$ci_upper[i], 2)
+        )
+      }
+    }
+  }
+  
+  # Create the final data frame
+  if (length(bayes_results) > 0) {
+    bayes_table <- do.call(rbind, lapply(bayes_results, function(x) data.frame(x, stringsAsFactors = FALSE)))
+    
+    # RENDER THE TABLE 
+    kable(bayes_table, 
+          col.names = c("Spine", "Generation", "Estimate", "SE", "Bayesian R²", "95% CI Lower", "95% CI Upper"),
+          booktabs = TRUE)
+  }
+}
+```
+
+```{r}
+#| label: tbl-bayesian-results-save
+#| include: false 
+#| echo: false
+#| message: false
+#| warning: false
+
+library(flextable)
+library(officer)
+
+# This code runs, but its output is completely ignored by Quarto.
+if (exists("bayes_table")) {
+  ft_bayes_results <- flextable(bayes_table)
+  # (Add any other flextable formatting here if you wish)
+  
+  doc <- read_docx()
+  doc <- body_add_flextable(doc, value = ft_bayes_results)
+  print(doc, target = "bayesian_model_results.docx")
+}
+```
+
+## **Growth Rate Analysis**
+
+We calculated the growth rate, from day to day, for headpine, tailspine, body length, and total body size to analyze differences in growth rates attributed to treatment.
+
+-   model: delta_values \~ treatment + generation + age + (1\|daphnia)
+
+```{r}
+#| label: fig-growth-rates
+#| fig-cap: "Growth rate trajectories reveal distinct developmental strategies between treatments. Changes in morphological measurements (body length, total body size, headspine, and tailspine) across the lifespan (days). Each panel shows the mean growth (Δ; in microns) from the previous timepoint for the indicated trait. Morphological changes are largest early in life and stabilize as individuals age for all traits. Notably, while growth trajectories for body length, total body size, and tailspine are similar between control (solid lines) and induced (dashed lines) treatments, headspine growth rates differ significantly (p = 0.042, mixed-effects model). Control lineages exhibit faster initial headspine growth that plateaus earlier, while induced lineages show slower but more sustained growth,a developmental strategy that ultimately achieves greater final spine lengths despite slower per-interval growth rates."
+#| fig-width: 12
+#| fig-height: 10
+
+# Calculate Deltas for Each Trait
+delta_spines <- spines %>%
+  arrange(ID, generation, age) %>%
+  group_by(ID, treatment, generation) %>%
+  mutate(
+    delta_headspine     = headspine  - lag(headspine),
+    delta_tailspine     = tailspine  - lag(tailspine),
+    delta_bodylength    = bodylength - lag(bodylength),
+    delta_totalbodysize = totalbodysize - lag(totalbodysize)
+  ) %>%
+  ungroup()
+
+# Reshape Data to Long Format for Plotting
+delta_long <- delta_spines %>%
+  dplyr::select(age, treatment, ID, generation, delta_headspine, delta_tailspine, delta_bodylength, delta_totalbodysize) %>%
+  pivot_longer(
+    cols = starts_with("delta_"),
+    names_to = "trait",
+    values_to = "delta_value"
+  ) %>%
+  filter(!is.na(delta_value))
+
+# Set the trait factor levels to control panel order in the 2x2 grid
+delta_long$trait <- factor(
+  delta_long$trait,
+  levels = c("delta_bodylength", "delta_totalbodysize", "delta_headspine", "delta_tailspine")
+)
+
+# Summarise Means and Standard Errors
+library(Rmisc)
+delta_summary <- summarySE(
+  delta_long,
+  measurevar = "delta_value",
+  groupvars = c("age", "trait", "treatment")
+)
+
+delta_summary$trait <- factor(
+  delta_summary$trait,
+  levels = c("delta_bodylength", "delta_totalbodysize", "delta_headspine", "delta_tailspine")
+)
+
+# Split data for easier plotting of open/filled points and line types
+control_points <- delta_summary[delta_summary$treatment == "control", ]
+induced_points <- delta_summary[delta_summary$treatment == "induced", ]
+
+# Panel Plotting Function
+get_panel <- function(trait_code, ylab) {
+  ggplot() +
+    # Control points: open circles
+    geom_point(
+      data = control_points[control_points$trait == trait_code, ],
+      aes(x = age, y = delta_value),
+      color = "black", shape = 21, fill = "white", size = 1.8, stroke = 0.6, alpha = 0.5
+    ) +
+    # Induced points: filled circles
+    geom_point(
+      data = induced_points[induced_points$trait == trait_code, ],
+      aes(x = age, y = delta_value),
+      color = "black", shape = 16, size = 1.8,
+      alpha = 0.5
+    ) +
+    # Smoothed mean line for control: solid
+    geom_smooth(
+      data = control_points[control_points$trait == trait_code, ],
+      aes(x = age, y = delta_value),
+      linetype = "solid", color = "black", fill = "grey80",
+      method = "loess", span = 0.3, size = 1, se = TRUE
+    ) +
+    # Smoothed mean line for induced: dashed
+    geom_smooth(
+      data = induced_points[induced_points$trait == trait_code, ],
+      aes(x = age, y = delta_value),
+      linetype = "dashed", color = "black", fill = "grey80",
+      method = "loess", span = 0.3, size = 1, se = TRUE
+    ) +
+    theme_bw(base_size = 14) +
+    ylab(ylab) +
+    xlab("Age (days)") +
+    theme(
+      legend.position    = "none",
+      plot.title         = element_blank(),
+      strip.text         = element_blank(),
+      strip.background   = element_blank(),
+      panel.border       = element_rect(colour = "black", fill = NA),
+      axis.title         = element_text(size = 10) 
+    )
+}
+
+# Create Each Panel
+pA <- get_panel("delta_bodylength", expression(Delta~"Body Length ("*mu*"m)"))
+pB <- get_panel("delta_totalbodysize", expression(Delta~"Total Body Size ("*mu*"m)"))
+pC <- get_panel("delta_headspine", expression(Delta~"Headspine ("*mu*"m)"))
+
+pD <- get_panel("delta_tailspine", expression(Delta~"Tailspine ("*mu*"m)"))
+
+# Assemble Panels in 2x2 Grid
+trajectory_plot <- (pA + pB) / (pC + pD)
+
+# Mixed Effects Linear Modeling for treatment comparison
+make_emm_panel <- function(trait_code, trait_label) {
+  dat <- delta_long %>% filter(trait == trait_code)
+  mod <- lmer(delta_value ~ treatment + generation + age + (1 | ID), data = dat)
+  emm <- emmeans(mod, ~treatment)
+  emm_df <- as.data.frame(emm)
+  anova_tbl <- anova(mod)
+  pval <- signif(anova_tbl$`Pr(>F)`[1], 2)
+  
+  ggplot(emm_df, aes(x = treatment, y = emmean, fill = treatment)) +
+    geom_point(shape = 21, fill = c("white", "black")[as.numeric(emm_df$treatment)], color = "black", size = 3, stroke = 1) +
+    geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), width = 0.12, color = "black") +
+    scale_fill_manual(values = c(control = "white", induced = "black")) +
+    labs(x = "Treatment", y = trait_label) +
+    annotate("text", x = 1.5, y = max(emm_df$emmean + emm_df$SE) * 1.1,
+             label = paste0("p = ", pval), size = 3) +
+    theme_bw(base_size = 13) +
+    theme(axis.title = element_text(size = 10), plot.title = element_blank())
+}
+
+# Labels for statistical comparison panels
+bl_label <- expression(Delta~"Body Length ("*mu*"m)")
+tb_label <- expression(Delta~"Total Body Size ("*mu*"m)")
+hs_label <- expression(Delta~"Headspine ("*mu*"m)")
+ts_label <- expression(Delta~"Tailspine ("*mu*"m)")
+
+# Individual panels
+gg_bl <- make_emm_panel("delta_bodylength", bl_label)
+gg_tb <- make_emm_panel("delta_totalbodysize", tb_label)
+gg_hs <- make_emm_panel("delta_headspine", hs_label)
+gg_ts <- make_emm_panel("delta_tailspine", ts_label)
+
+# Final combined plot
+final_emm_panel <- (gg_bl + gg_tb) / (gg_hs + gg_ts) # removed from final manuscript 
+
+# Display both parts
+trajectory_plot
+#final_emm_panel
+
+
+```
+
+**Main finding:** All four metrics ( A. body length, B. total body size, C. headspine, D. tailspine) show the most pronounced increase early in life, followed by a decrease or stabilization with age, suggesting that the greatest morphological changes occur during neonate and juvenile stages, and then taper off.
+
+```{r}
+#| label: tbl-growth-anova
+#| tbl-cap: "Mixed-effects model results for growth rate differences between treatments. Models tested treatment effects on morphological growth rates (Δ from previous timepoint) across all generations and ages. Each row represents a unique morphological trait. 'Est. Difference (microns)' is the estimated mean difference in growth rate between predator-induced and control treatments, where positive values indicate faster growth in induced individuals. 'Std. Error' is the standard error of the estimated difference. 'F statistic' and associated 'P value' test the significance of the treatment effect; p-values < 0.05 indicate statistically significant differences. See Methods for full model specification and random effect structure."
+
+library(knitr)
+library(kableExtra)
+library(purrr)
+
+# Check if delta_long_fixed exists, if not create it
+if (!exists("delta_long_fixed") || is.null(delta_long_fixed)) {
+  delta_long_fixed <- delta_spines %>%
+    dplyr::select(age, treatment, ID, generation, delta_headspine, delta_tailspine, delta_bodylength, delta_totalbodysize) %>%
+    pivot_longer(
+      cols = starts_with("delta_"),
+      names_to = "trait",
+      values_to = "delta_value"
+    ) %>%
+    filter(!is.na(delta_value))
+}
+
+if (exists("delta_long_fixed") && !is.null(delta_long_fixed)) {
+  
+  # Function to extract model results for each trait
+  extract_model_results <- function(trait_code, trait_name) {
+    # Filter data for this trait
+    dat <- delta_long_fixed %>% filter(trait == trait_code)
+    
+    # Fit mixed effects model
+    mod <- lmer(delta_value ~ treatment + generation + age + (1 | ID), data = dat)
+    
+    # Get ANOVA table
+    anova_tbl <- anova(mod)
+    
+    # Get emmeans results
+    emm <- emmeans(mod, ~treatment)
+    
+    # Get contrast between treatments
+    contrast <- pairs(emm)
+    contrast_df <- as.data.frame(contrast)
+    
+    # Extract F statistic and p-value
+    f_stat <- if(is.numeric(anova_tbl$`F value`[1]) && !is.na(anova_tbl$`F value`[1])) {
+      round(anova_tbl$`F value`[1], 2)
+    } else { NA }
+    
+    p_value <- if(is.numeric(anova_tbl$`Pr(>F)`[1]) && !is.na(anova_tbl$`Pr(>F)`[1])) {
+      anova_tbl$`Pr(>F)`[1]
+    } else { NA }
+    
+    # Get difference estimate and SE from contrast
+    diff_est <- if(nrow(contrast_df) > 0 && is.numeric(contrast_df$estimate[1])) {
+      contrast_df$estimate[1]
+    } else { NA }
+    
+    diff_se <- if(nrow(contrast_df) > 0 && is.numeric(contrast_df$SE[1])) {
+      contrast_df$SE[1]
+    } else { NA }
+    
+    return(list(
+      trait = trait_name,
+      estimate = diff_est,
+      std.error = diff_se,
+      f_statistic = f_stat,
+      p_value = p_value
+    ))
+  }
+  
+  # Extract results for each trait
+  traits <- list(
+    c("delta_bodylength", "Body Length"),
+    c("delta_totalbodysize", "Total Body Size"), 
+    c("delta_headspine", "Headspine"),
+    c("delta_tailspine", "Tailspine")
+  )
+  
+  growth_results <- list()
+  for (trait_pair in traits) {
+    result <- extract_model_results(trait_pair[1], trait_pair[2])
+    if (!is.null(result)) {
+      p_val <- result$p_value
+      p_formatted <- if (is.na(p_val)) "—" else {
+        if (p_val < 0.001) "< 0.001" else if (p_val < 0.01) "< 0.01" else if (p_val < 0.05) "< 0.05" else as.character(round(p_val, 3))
+      }
+      
+      growth_results[[length(growth_results) + 1]] <- list(
+        Trait = result$trait,
+        Estimate = round(result$estimate, 2),
+        SE = round(result$std.error, 2),
+        F_statistic = round(result$f_statistic, 2),
+        p_value = p_formatted
+      )
+    }
+  }
+  
+  if (length(growth_results) > 0) {
+    # Step 1: Create the data frame object
+    growth_table <- do.call(rbind, lapply(growth_results, function(x) data.frame(x, stringsAsFactors = FALSE)))
+    
+    # Step 2: Render it to the document
+    kable(growth_table, 
+          col.names = c("Trait", "Est. Difference (μm)", "Std. Error", "F statistic", "P value"),
+          booktabs = TRUE,
+          align = 'lcccc')
+  }
+  
+} else {
+  cat("Warning: The growth rate data was not found. Please ensure the delta calculation chunks have been run successfully before this chunk.")
+}
+```
+
+## **Developmental Trajectories During Growth**
+
+To determine if there are noted differences in the morphological traits and their associated survivorship and treatment, we plotted the morphological traits for survivors and perished based on survival to the next timepoint.
+
+```{r}
+#| label: fig-developmental
+#| fig-cap: "Developmental trajectories during concentrated growth period. Developmental trajectories show no evidence of size-selective mortality. Body length, headspine residuals, and tailspine residuals over age (days 3-20) for individuals grouped by survival status: those who survived to the next measurement timepoint (purple, n=78) versus those who perished before the next measurement (green, n=505). Headspine and tailspine residuals were calculated from linear mixed-effects models accounting for body length, isolating spine length variation independent of overall body size. Both survivor and non-survivor groups display overlapping developmental trajectories and similar trait distributions across all measurements, providing no evidence that size-selective or trait-selective mortality drives observed morphological differences between treatment groups. The similar developmental patterns between survival groups support that transgenerational effects on spine morphology reflect genuine inheritance of plastic responses rather than differential mortality of particular phenotypes."
+#| fig-width: 12
+#| fig-height: 6
+#| cache: false
+
+local({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(lme4)
+
+  experiment_end <- 20
+  tol <- 0.5
+
+  # Fresh load (do not drop rows prematurely)
+  dev_sp <- read.csv("../data/spines_updated.csv", stringsAsFactors = FALSE)
+
+  # Normalize columns and types (consistent with your setup)
+  num_vars <- c("headspine", "tailspine", "bodylength")
+  for (v in num_vars) if (v %in% names(dev_sp)) dev_sp[[v]] <- suppressWarnings(as.numeric(dev_sp[[v]]))
+  dev_sp$totalbodysize <- rowSums(dev_sp[, intersect(names(dev_sp), c("headspine","tailspine","bodylength"))], na.rm = TRUE)
+
+  dev_sp <- dev_sp %>%
+    dplyr::mutate(
+      line = as.character(line),
+      sample = factor(as.character(sample)),
+      generation = factor(as.character(generation)),
+      ID = factor(as.character(ID)),
+      age = suppressWarnings(as.numeric(age)),
+      treatment = factor(ifelse(as.numeric(line) %% 2 == 1, "induced", "control"))
+    ) %>%
+    dplyr::filter(generation %in% c('1','2','3','4','5','6'),
+                  !is.na(sample), !is.na(age))
+
+  # Status by sample on the full data (as requested)
+  status <- dev_sp %>%
+    dplyr::group_by(sample) %>%
+    dplyr::summarise(last_age = max(age, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::mutate(status = if_else(last_age < (experiment_end - tol), "perished", "survivor"))
+
+  # Join status by sample, then restrict age for plotting
+  dev_cap20 <- dev_sp %>%
+    dplyr::inner_join(status, by = "sample") %>%
+    dplyr::filter(age >= 3, age <= 20) %>%
+    dplyr::mutate(.rowid = dplyr::row_number())
+
+  cat("Status counts (unique samples):\n")
+  print(table(status$status))
+
+  # Prepare modeling data for residuals
+  mod_dat <- dev_cap20 %>%
+    dplyr::filter(!is.na(bodylength), !is.na(headspine), !is.na(tailspine))
+
+  # Mixed-effects models with random intercept for sample (method unchanged)
+  lmer_head <- lmer(headspine ~ bodylength + (1|sample), data = mod_dat)
+  lmer_tail <- lmer(tailspine ~ bodylength + (1|sample), data = mod_dat)
+
+  # Attach residuals back via .rowid
+  mod_res <- mod_dat %>%
+    dplyr::mutate(
+      headspine_resid = as.numeric(resid(lmer_head)),
+      tailspine_resid = as.numeric(resid(lmer_tail))
+    ) %>%
+    dplyr::select(.rowid, headspine_resid, tailspine_resid)
+
+  dev_cap20 <- dev_cap20 %>%
+    dplyr::left_join(mod_res, by = ".rowid")
+
+  sp_long <- dev_cap20 %>%
+    dplyr::select(sample, treatment, age, bodylength, status, headspine_resid, tailspine_resid) %>%
+    tidyr::pivot_longer(
+      cols = c(bodylength, headspine_resid, tailspine_resid),
+      names_to = "measurement",
+      values_to = "value"
+    )
+
+  labels <- c(
+    bodylength = "Body Length\n(microns)",
+    headspine_resid = "Headspine\nResiduals",
+    tailspine_resid = "Tailspine\nResiduals"
+  )
+
+  if (sum(status$status == "perished") <= 5) {
+    ggplot() +
+      annotate("text", x = 0.5, y = 0.5,
+               label = paste("Insufficient perished data for analysis\nPerished samples:",
+                             sum(status$status == "perished")),
+               size = 6) +
+      theme_void() +
+      labs(title = "Developmental Trajectories: Insufficient Data")
+  } else {
+    ggplot(sp_long, aes(x = age, y = value, color = status)) +
+      geom_point(size = 1.1, alpha = 0.23) +
+      geom_smooth(aes(group = status), method = "loess", se = TRUE, linewidth = 1, alpha = 0.15) +
+      facet_wrap(~measurement, scales = "free_y", labeller = as_labeller(labels), nrow = 1) +
+      scale_color_manual(values = c("perished" = "#66c2a5", "survivor" = "#8e63b6")) +
+      labs(x = "Age (days)", y = "Value", color = "Status") +
+      theme_minimal(base_size = 14) +
+      theme(
+        strip.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position = "top",
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(linewidth = 0.25, linetype = 3, color = "grey90")
+      )
+  }
+})
+
+
+```
+
+**Main finding.** Developmental trajectories show no evidence of size-selective mortality. Survivors and perished have similar morphological traits.
+
+## Survivorship Analysis
+
+To whether a *Daphnia's* morphological traits (body length, headspine, tailspine) influence its likelihood of surviving to the next measurement period we calculated a binary survival outcome for each observation and then fit a logistic regression model (GLM) to predict survival probability based on these traits, age, and treatment group. Finally, we visualized the model's predictions to show how survival probability changes over the lifespan of individuals with small, average, or large trait values as determined by our dataset.
+
+-   **Model formula**: survivorship \~ bodylength + headspine + tailspine + age \* treatment
+
+```{r}
+#| label: fig-survivorship
+#| fig-cap: "Survivorship trajectories show no evidence of size-selective mortality across morphological traits. Survival probability to the next measurement timepoint plotted against age (days) for individuals with low (purple), mean (teal), and high (yellow) values of body length (left), headspine (center), and tailspine (right) morphology. Solid lines represent control treatment, dashed lines represent predator-induced treatment. Shaded areas indicate 95% confidence intervals. All morphological trait categories exhibit similar survival trajectories within each treatment group, with survival probability declining predictably with age regardless of trait size. The overlapping confidence intervals and parallel survival curves across trait value categories (low, mean, high) demonstrate that morphological differences do not confer survival advantages or disadvantages, ruling out size-selective mortality as a confounding factor in our transgenerational analyses. Model predictions are based on logistic regression with morphological traits, age, and treatment as predictors (see Methods for full model specification)."
+#| fig-width: 12
+#| fig-height: 6
+#| cache: false
+
+local({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+
+  # Fresh load to avoid upstream mutations
+  df <- read.csv("../data/spines_updated.csv", stringsAsFactors = FALSE)
+
+  # Coerce types (same as setup)
+  num_vars <- c("bodylength", "headspine", "tailspine")
+  for (v in num_vars) if (v %in% names(df)) df[[v]] <- suppressWarnings(as.numeric(df[[v]]))
+
+  df <- df %>%
+    dplyr::mutate(
+      line = as.character(line),
+      sample = factor(as.character(sample)),
+      generation = factor(as.character(generation)),
+      age = suppressWarnings(as.numeric(age)),
+      treatment = factor(ifelse(as.numeric(line) %% 2 == 1, "induced", "control"),
+                         levels = c("control", "induced"))
+    ) %>%
+    dplyr::filter(generation %in% c("1","2","3","4","5","6"),
+                  !is.na(sample), !is.na(age))
+
+  # 1) Per-interval survival to next timepoint by sample (as in your original code)
+  df <- df %>%
+    dplyr::arrange(sample, age) %>%
+    dplyr::group_by(sample) %>%
+    dplyr::mutate(next_age = dplyr::lead(age),
+                  survived_next = !is.na(next_age)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      status = ifelse(survived_next, "survivor", "perished"),
+      status = factor(status, levels = c("survivor", "perished")),
+      survive_bin = as.integer(survived_next)   # 1 = survived to next timepoint, 0 = last observation
+    )
+
+  cat("Raw counts (before NA filtering in predictors):\n")
+  print(table(df$status, useNA = "ifany"))
+
+  # 2) Modeling frame (use dplyr::select explicitly to avoid masking)
+  model_df <- df %>%
+    dplyr::select(survive_bin, bodylength, headspine, tailspine, age, treatment) %>%
+    stats::na.omit()
+
+  cat("Counts after NA filtering (glm data):\n")
+  print(table(factor(ifelse(model_df$survive_bin == 1, "survivor", "perished"),
+                     levels = c("survivor","perished"))))
+
+  if (length(unique(model_df$survive_bin)) < 2) {
+    print(
+      ggplot() +
+        annotate("text", x = 0.5, y = 0.55,
+                 label = "Survival outcome has a single class after NA filtering.\nCheck that last timepoint rows retain trait values.",
+                 size = 5) +
+        theme_void()
+    )
+    return(invisible(NULL))
+  }
+
+  # 3) Binomial GLM 
+  glm_fit <- glm(
+    survive_bin ~ bodylength + headspine + tailspine + age * treatment,
+    data = model_df, family = binomial
+  )
+
+  # 4) Prediction grid: low/median/high for each focal trait, others at means
+  traits <- c("bodylength", "headspine", "tailspine")
+  trait_labels <- c(bodylength = "Body Length", headspine = "Headspine", tailspine = "Tailspine")
+
+  ages_to_plot <- seq(min(model_df$age, na.rm = TRUE),
+                      max(model_df$age, na.rm = TRUE),
+                      length.out = 100)
+
+  treatments_to_plot <- levels(model_df$treatment)
+
+  trait_means <- sapply(traits, function(x) mean(model_df[[x]], na.rm = TRUE))
+  trait_quantiles <- function(trt) quantile(model_df[[trt]], probs = c(0.1, 0.5, 0.9), na.rm = TRUE)
+
+  plot_data <- lapply(traits, function(trt) {
+    trt_vals <- as.numeric(trait_quantiles(trt))
+    grid <- expand.grid(
+      age = ages_to_plot,
+      treatment = treatments_to_plot,
+      trt_val = trt_vals
+    )
+    # Fill predictors: focal trait takes low/median/high; others fixed at means
+    for (t in traits) {
+      grid[[t]] <- if (t == trt) grid$trt_val else trait_means[[t]]
+    }
+    grid$trait <- trait_labels[[trt]]
+
+    # Level labels for legend
+    lvl_map <- setNames(c("low", "mean", "high"), nm = as.character(trt_vals))
+    grid$level <- factor(lvl_map[as.character(grid$trt_val)], levels = c("low", "mean", "high"))
+    grid
+  }) %>% dplyr::bind_rows()
+
+  # Align factor levels
+  plot_data$treatment <- factor(plot_data$treatment, levels = treatments_to_plot)
+
+  # Predict on link scale for SEs, then transform
+  pr <- predict(glm_fit, newdata = plot_data, se.fit = TRUE, type = "link")
+  plot_data$fit <- pr$fit
+  plot_data$se.fit <- pr$se.fit
+
+  plot_data <- plot_data %>%
+    dplyr::mutate(
+      surv_prob = plogis(fit),
+      lower = plogis(fit - 1.96 * se.fit),
+      upper = plogis(fit + 1.96 * se.fit)
+    )
+
+  ggplot(plot_data, aes(x = age, y = surv_prob, color = level, linetype = treatment,
+                        group = interaction(level, treatment))) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = level), alpha = 0.13, color = NA) +
+    geom_line(linewidth = 0.7) +
+    facet_wrap(~ trait, ncol = 3) +
+    scale_color_viridis_d(name = "Trait value", labels = c("Low", "Mean", "High")) +
+    scale_fill_viridis_d(name = "Trait value", labels = c("Low", "Mean", "High")) +
+    scale_linetype_discrete(name = "Treatment") +
+    labs(y = "Probability of Survival to Next Timepoint", x = "Age (days)") +
+    coord_cartesian(ylim = c(0, 1)) +
+    theme_bw(base_size = 8) +
+    theme(
+      axis.title.x = element_text(size = 9),
+      axis.title.y = element_text(size = 9, margin = margin(r = 2)),
+      plot.title = element_blank(),
+      legend.position = "right",
+      strip.text = element_text(size = 8, face = "bold"),
+      strip.background = element_blank(),
+      axis.text = element_text(size = 7),
+      plot.margin = margin(3, 3, 3, 3)
+    )
+})
+
+```
+
+# **Supplemental Figures**
+
+### **Age-Body Length Relationship**
+
+We determined there was high correlation between age and bodylength, which influnced our model structure as we did not include both age and bodylength as a covariate in our Bayesian and linear mixed effect models.
+
+```{r}
+#| label: fig-supp-growth
+#| fig-cap: "Ontogenetic growth trajectories for Daphnia body length across treatments show high correlation between age and body length. Scatterplot of individual body length measurements (μm) as a function of age (days) for control (open circles) and induced (filled circles) treatments. The solid line shows the overall fitted growth curve (R=0.85) across all data. Growth patterns are similar between treatments, indicating that environmental induction principally affects defensive traits rather than somatic traits in this clone."
+#| fig-width: 10
+#| fig-height: 5
+
+# Define a color palette for better accessibility
+colorblind_palette <- c("induced" = "black", "control" = "black")
+
+# Create a plot for Age vs. Body Length with shape differentiation for treatments
+ggplot(spines, aes(x = age, y = bodylength)) +
+  geom_point(aes(shape = treatment), size = 2, alpha = 0.7) +
+  geom_smooth(method = "loess", color = "black", se = FALSE) +
+  stat_cor(aes(label = ..r.label..), method = "pearson", size = 5, 
+           label.x = 15, label.y = max(spines$bodylength) - 10) +
+  theme_bw() +
+  scale_shape_manual(values = c("control" = 1, "induced" = 16)) +
+  scale_color_manual(values = colorblind_palette) +
+  theme(
+    legend.position = "none",
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA)
+  ) +
+  labs(
+    x = "Age (days)",
+    y = "Body Length (microns)"
+  )
+```
+
+### Transgenerational Pattern Summary
+
+Supplemental figure displays unmodeled defensive values.
+
+```{r}
+#| label: fig-supp-transgenerational
+#| fig-cap: "Raw morphological measurements reveal transgenerational attenuation of predator-induced defenses. Mean headspine (top row) and tailspine (bottom row) lengths (μm) across generations F0, F3, F4, and F5 for control (open circles) and predator-induced (filled circles) treatments. Error bars represent ± 1 standard error. These raw measurements are not adjusted for body length or other covariates. Predator-induced lineages exhibit significantly longer defensive spines in the initial exposure generation (F0) and maintain elevated spine lengths through F3 and F4. However, treatment differences progressively diminish across generations, becoming statistically indistinguishable by F5 for both headspine and tailspine traits. This pattern demonstrates the finite duration of transgenerational plasticity, with predator-induced morphological defenses persisting for approximately four generations before returning to baseline levels. The convergence of trait values in F5 suggests that environmental memory of ancestral predation risk eventually dissipates in the absence of continued predator cues.."
+#| fig-width: 12
+#| fig-height: 6
+
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+
+# Set consistent y-limits for each trait
+headspine_ylim <- c(200, 700)  # Adjust based on your data range + error bars
+tailspine_ylim <- c(400, 1200) # Adjust based on your data range + error bars
+
+# Define generation mapping and traits
+gen_lookup <- c(F0 = "1", F3 = "4", F4 = "5", F5 = "6")
+trait_names <- c("headspine", "tailspine")
+
+# Function to create individual trait plots
+make_trait_plot <- function(df, trait, gen_label, gen_val) {
+  # Filter data for the specific generation
+  dat <- subset(df, generation == gen_val)
+  
+  # Check if we have data
+  if (nrow(dat) == 0) {
+    return(
+      ggplot() +
+        annotate("text", x = 1.5, y = 1, label = paste("No data for", gen_label, trait), size = 3) +
+        theme_void() +
+        labs(title = paste(gen_label, trait)) +
+        xlim(0.5, 2.5) + ylim(0, 2)
+    )
+  }
+  
+  # Calculate summary statistics using base R aggregate
+  sumtab <- aggregate(dat[[trait]], 
+                      by = list(treatment = dat$treatment), 
+                      FUN = function(x) c(mean = mean(x, na.rm = TRUE), 
+                                         se = sd(x, na.rm = TRUE)/sqrt(length(x))))
+  
+  # Unpack the matrix column created by aggregate
+  sumtab$mean_val <- sumtab$x[, "mean"]
+  sumtab$se_val <- sumtab$x[, "se"]
+  
+  # Check if we have valid data
+  if (nrow(sumtab) == 0 || all(is.na(sumtab$mean_val))) {
+    return(
+      ggplot() +
+        annotate("text", x = 1.5, y = 1, label = paste("No valid data for", gen_label, trait), size = 3) +
+        theme_void() +
+        labs(title = paste(gen_label, trait)) +
+        xlim(0.5, 2.5) + ylim(0, 2)
+    )
+  }
+  
+  # Create the plot with proper LaTeX symbols
+  ylabel <- if (trait == "headspine") {
+    expression("Mean Headspine (" * mu * "m)")
+  } else {
+    expression("Mean Tailspine (" * mu * "m)")
+  }
+  
+  ggplot(sumtab, aes(x = treatment, y = mean_val)) +
+    geom_point(aes(shape = treatment), size = 3, stroke = 1) +
+    geom_errorbar(aes(ymin = mean_val - se_val, ymax = mean_val + se_val), 
+                  width = 0.2, size = 0.8) +
+    scale_shape_manual(values = c("control" = 1, "induced" = 16)) +
+    scale_x_discrete(labels = c("control" = "Control", "induced" = "Induced")) +
+    theme_bw() +
+    labs(
+      title = paste0(gen_label),
+      y = ylabel,
+      x = "Treatment"
+    ) +
+    theme(
+      plot.title = element_text(size = 12, hjust = 0.5, face = "bold"),
+      axis.title.y = element_text(size = 10),
+      axis.title.x = element_text(size = 10),
+      axis.text = element_text(size = 9),
+      legend.position = "none",
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, size = 0.8)
+    ) +
+    ylim(400,1200)
+}
+
+
+
+# Create all plots
+plots <- list()
+plot_index <- 1
+
+# First row: Headspine plots
+for (i in seq_along(gen_lookup)) {
+  gen_label <- names(gen_lookup)[i]
+  gen_val <- gen_lookup[i]
+  plots[[plot_index]] <- make_trait_plot(spines, "headspine", gen_label, gen_val)
+  plot_index <- plot_index + 1
+}
+
+# Second row: Tailspine plots  
+for (i in seq_along(gen_lookup)) {
+  gen_label <- names(gen_lookup)[i]
+  gen_val <- gen_lookup[i]
+  plots[[plot_index]] <- make_trait_plot(spines, "tailspine", gen_label, gen_val)
+  plot_index <- plot_index + 1
+}
+
+# Arrange in grid: 4 columns (generations), 2 rows (traits)
+grid.arrange(
+  grobs = plots,
+  ncol = 4,
+  nrow = 2,
+  top = grid::textGrob("Transgenerational Defense Patterns", 
+                       gp = grid::gpar(fontsize = 14, fontface = "bold")),
+  left = grid::textGrob("Tailspine                                                    Headspine", 
+                        rot = 90, gp = grid::gpar(fontsize = 12))
+)
+```
+
+### Model Diagnostics
+
+#### Linear Diagnostic Table
+
+```{r}
+#| label: tbl-linear-diagnostics
+#| tbl-cap: "Linear mixed-effects model diagnostics across generations and traits. Models tested treatment effects on headspine and tailspine length (μm) for each generation, with body length as a covariate and individual identity as a random intercept (formula: spine ~ treatment + bodylength + (1|ID)). Marginal R² represents the proportion of variance explained by fixed effects only (treatment + body length), while Conditional R² represents variance explained by both fixed and random effects combined. Model fit statistics were calculated using the performance package in R. AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) are information criteria for model comparison, with lower values indicating better fit. All models were fit using restricted maximum likelihood (REML). Generation refers to the experimental cohort (F0 = initial exposure, F3-F5 = descendant generations), and Trait indicates the defensive morphological feature measured."
+#| echo: false
+
+library(dplyr)
+library(performance)
+library(knitr)
+library(tibble)
+
+# 1. Initialize an empty list to store diagnostics for each model
+diagnostics_list <- list()
+
+# 2. Loop through each generation and trait to access the corresponding model
+for (gen in generations) {
+  for (spine in spine_traits) {
+    
+    # Construct the key to find the model in the list
+    model_key <- paste0(gen, "_", spine)
+    
+    # Check if the model exists before trying to access it
+    if (!is.null(linear_models[[model_key]])) {
+      model <- linear_models[[model_key]]
+      
+      # 3. Use performance::model_performance to extract all metrics at once
+      perf <- model_performance(model)
+      
+      # 4. Create a one-row tibble with the extracted information
+      current_diagnostics <- tibble(
+        Model = "Linear",
+        Generation = gen,
+        Trait = spine,
+        `Marginal R²` = perf$R2_marginal,
+        `Conditional R²` = perf$R2_conditional,
+        AIC = perf$AIC,
+        BIC = perf$BIC,
+        LogLik = perf$Log_Likelihood
+      )
+      
+      # Add this tibble to our list
+      diagnostics_list[[model_key]] <- current_diagnostics
+    }
+  }
+}
+
+# 5. Combine all the individual tibbles into a single data frame
+linear_diagnostics <- bind_rows(diagnostics_list)
+
+# 6. Render the final table using kable
+kable(linear_diagnostics, digits = 3, align = "lccrrrrr")
+
+# 7. Save for transfer to Word Doc 
+# Load the required library
+library(flextable)
+library(officer)
+
+# (Assuming the 'linear_diagnostics' data frame was created)
+
+# 1. Convert  data frame to a flextable object
+ft <- flextable(linear_diagnostics)
+
+# 2. Apply some auto-formatting to make it look nice
+ft <- ft %>% 
+  colformat_double(digits = 3) %>% # Format numeric columns
+  autofit() %>%                     # Adjust column widths
+  theme_booktabs() %>%              # Apply a clean, professional theme
+  set_caption("Linear model diagnostics across generations and traits.") # Add a caption
+
+# 3. Create a Word document object and add the table to it
+doc <- read_docx()
+doc <- body_add_flextable(doc, value = ft)
+
+# 4. Save the Word document to a file
+file_path <- "linear_model_diagnostics.docx"
+print(doc, target = file_path)
+
+cat(paste("Table saved successfully to:", file_path, "\n"))
+
+```
+
+#### Bayesian Diagnostic Table
+
+```{r}
+#| label: tbl-bayesian-diagnostics-setup
+#| echo: false
+#| output: false
+#| message: false
+#| warning: false
+
+library(brms)
+library(dplyr)
+library(tibble)
+library(knitr)
+library(bayestestR)
+library(flextable) # Added for saving to Word
+library(officer)   # Added for saving to Word
+
+# Define generations and traits
+generations <- c("F0", "F3", "F4", "F5")
+traits <- c("headspine", "tailspine")
+
+diagnostics_list <- list()
+
+for (gen in generations) {
+  for (trait in traits) {
+    model_key <- paste0(gen, "_", trait)
+    model_file <- paste0("bayesian_model_", model_key, ".rds")
+
+    if (file.exists(model_file)) {
+      model <- readRDS(model_file)
+      
+      # --- START OF SMART COMPUTATION LOGIC ---
+      # Check if the LOO criteria have already been computed and saved.
+      if (is.null(model$criteria$loo)) {
+        # If not, run the expensive calculation and re-save the model.
+        model <- suppressMessages(add_criterion(model, c("loo", "waic"), moment_match = TRUE))
+        saveRDS(model, file = model_file)
+      }
+      # --- END OF SMART COMPUTATION LOGIC ---
+      
+      model_summary <- summary(model)
+      
+      all_params_summary <- bind_rows(
+        as.data.frame(model_summary$fixed),
+        as.data.frame(model_summary$spec_pars),
+        as.data.frame(model_summary$random$sample)
+      )
+      
+      max_rhat <- max(all_params_summary$Rhat, na.rm = TRUE)
+      min_bulk_ess <- min(all_params_summary$Bulk_ESS, na.rm = TRUE)
+      min_tail_ess <- min(all_params_summary$Tail_ESS, na.rm = TRUE)
+      
+      loo_val <- model$criteria$loo$estimates["looic", "Estimate"]
+      waic_val <- model$criteria$waic$estimates["waic", "Estimate"]
+      
+      # Alternative approach for R² calculation
+      r2_vals <- suppressMessages(bayes_R2(model, summary = TRUE))
+      
+      # Handle different R² outputs - sometimes only marginal is returned
+      if (is.matrix(r2_vals) && nrow(r2_vals) >= 2) {
+        r2_marginal <- r2_vals[1, "Estimate"]
+        r2_conditional <- r2_vals[2, "Estimate"]
+      } else if (is.matrix(r2_vals) && nrow(r2_vals) == 1) {
+        r2_marginal <- r2_vals[1, "Estimate"]
+        r2_conditional <- NA_real_
+      } else {
+        r2_marginal <- NA_real_
+        r2_conditional <- NA_real_
+      }
+      
+      pd_val <- p_direction(model) %>%
+        filter(Parameter == "b_treatmentinduced") %>%
+        pull(pd)
+      
+      diagnostics_list[[model_key]] <- tibble(
+        Generation = gen,
+        Trait = trait,
+        `Max Rhat` = max_rhat,
+        `Min Bulk ESS` = min_bulk_ess,
+        `Min Tail ESS` = min_tail_ess,
+        LOOIC = loo_val,
+        WAIC = waic_val,
+        `p(Direction)` = pd_val,
+        `Marginal R²` = r2_marginal
+        # Removed Conditional R² since it's not working reliably
+      )
+    }
+  }
+}
+
+# Combine all rows into the final data frame
+bayesian_diagnostics_full <- bind_rows(diagnostics_list)
+
+# ---  SAVE TO WORD DOCUMENT (but suppress output) ---
+if (nrow(bayesian_diagnostics_full) > 0) {
+  # 1. Create a flextable object
+  ft_bayes_diag <- flextable(bayesian_diagnostics_full)
+  
+  # 2. Apply formatting
+  ft_bayes_diag <- ft_bayes_diag %>%
+    colformat_double(digits = 2) %>%
+    set_formatter(
+      `Min Bulk ESS` = function(x) sprintf("%.0f", x),
+      `Min Tail ESS` = function(x) sprintf("%.0f", x)
+    ) %>%
+    autofit() %>%
+    theme_booktabs() %>%
+    set_caption("Bayesian model diagnostics, including convergence (Rhat, ESS) and predictive accuracy (LOOIC, WAIC).") %>%
+    align(j = ~ . -Generation -Trait, align = "center", part = "all")
+
+  # 3. Create and save the Word document (suppress output)
+  doc <- read_docx()
+  doc <- body_add_flextable(doc, value = ft_bayes_diag)
+  file_path <- "bayesian_model_diagnostics.docx"
+  suppressMessages(print(doc, target = file_path))
+}
+```
+
+```{r}
+#| label: bayesian-diagnostics-table-display
+#| echo: false
+#| tbl-cap: "Bayesian mixed-effects model diagnostics for convergence assessment and predictive accuracy. Models tested treatment effects on headspine and tailspine length (μm) for each generation using the formula: spine ~ treatment + bodylength + (1|ID), fit with brms using default weakly informative priors. Max Rhat is the maximum potential scale reduction factor across all parameters (values < 1.01 indicate convergence). Min Bulk ESS and Min Tail ESS are the minimum effective sample sizes for bulk and tail quantities respectively (values > 400 recommended for reliable inference). LOOIC (Leave-One-Out Information Criterion) and WAIC (Widely Applicable Information Criterion) assess out-of-sample predictive accuracy, with lower values indicating better predictive performance. p(Direction) represents the probability that the treatment effect is in the observed direction (values > 0.975 suggest strong evidence). Marginal R² quantifies variance explained by fixed effects only, while Conditional R² includes both fixed and random effects. All models used 4 chains with 2000 iterations each (1000 warmup), and information criteria were computed using moment matching for improved stability with the loo package."
+
+
+# Render the table in the document
+kable(bayesian_diagnostics_full, digits = 2, align = "llrrrrrr")
+
+```
+
+#### Model Diagnostic Supplementary Figure
+
+```{r}
+#| label: fig-diagnostic-headspine
+#| fig-cap: "Model diagnostic plots for headspine models across generations F0, F3, F4, and F5. For Bayesian mixed-effects models: Posterior predictive checks (left panels) compare observed data density (dark line) to replicated datasets from the posterior (light blue lines) to assess model fit—good fit is indicated when the observed data falls within the range of posterior predictions. Traceplots (right panels) show MCMC chain convergence for intercept and treatment effect parameters across 2000 iterations—well-mixed chains with stable means indicate successful convergence. For linear mixed-effects models: Residuals vs fitted plots (left panels) check homoscedasticity and linearity assumptions—residuals should be randomly scattered around zero with no clear patterns. QQ plots (right panels) assess normality of residuals—points should fall approximately along the diagonal line. Together, these diagnostics validate model assumptions and ensure reliable inference. Models showing poor diagnostics (systematic patterns in residuals, divergent chains, or posterior-data mismatch) would require model revision or alternative specifications."
+#| fig-width: 12
+#| fig-height: 12
+#| echo: false
+#| results: 'asis'
+
+
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(bayesplot)
+
+bayesplot_theme_set(theme_minimal())
+diag_head <- list()
+
+for (gen in generations) {
+  key <- paste0(gen, "_headspine")
+
+  if (!is.null(bayesian_models[[key]])) {
+    mod <- bayesian_models[[key]]
+    pp <- pp_check(mod, type = "dens_overlay") + ggtitle(paste("Posterior Predictive:", gen, "headspine"))
+    trace <- mcmc_trace(as.array(mod), pars = c("b_Intercept", "b_treatmentinduced")) + ggtitle(paste("Traceplot:", gen, "headspine"))
+    diag_head[[length(diag_head) + 1]] <- arrangeGrob(pp, trace, ncol = 2)
+  }
+
+  if (!is.null(linear_models[[key]])) {
+    mod <- linear_models[[key]]
+    resid_df <- data.frame(fitted = fitted(mod), resid = resid(mod))
+    qq_df <- data.frame(sample = resid(mod))
+
+    p1 <- ggplot(resid_df, aes(x = fitted, y = resid)) +
+      geom_point(alpha = 0.4) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      labs(title = paste("Residuals vs Fitted:", gen, "headspine")) +
+      theme_minimal(base_size = 10)
+
+    p2 <- ggplot(qq_df, aes(sample = sample)) +
+      stat_qq() +
+      stat_qq_line() +
+      labs(title = paste("QQ Plot:", gen, "headspine")) +
+      theme_minimal(base_size = 10)
+
+    diag_head[[length(diag_head) + 1]] <- arrangeGrob(p1, p2, ncol = 2)
+  }
+}
+
+grid.arrange(grobs = diag_head, ncol = 1)
+
+
+
+
+
+```
+
+```{r}
+#| label: fig-diagnostic-tailspine
+#| fig-cap: "Model diagnostic plots for tailspine models across generations F0, F3, F4, and F5. For Bayesian mixed-effects models: Posterior predictive checks (left panels) compare observed tailspine data density (dark line) to replicated datasets from the posterior (light blue lines) to assess model fit—good fit is indicated when the observed data falls within the range of posterior predictions. Traceplots (right panels) show MCMC chain convergence for intercept and treatment effect parameters across 2000 iterations—well-mixed chains with stable means indicate successful convergence. For linear mixed-effects models: Residuals vs fitted plots (left panels) check homoscedasticity and linearity assumptions—residuals should be randomly scattered around zero with no clear patterns. QQ plots (right panels) assess normality of residuals—points should fall approximately along the diagonal line. Together, these diagnostics validate model assumptions for tailspine analyses and ensure reliable inference about transgenerational effects on this defensive trait. Models showing poor diagnostics (systematic patterns in residuals, divergent chains, or posterior-data mismatch) would require model revision or alternative specifications."
+#| fig-width: 12
+#| fig-height: 12
+#| echo: false
+#| results: 'asis'
+##| eval: false
+
+
+
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(bayesplot)
+
+bayesplot_theme_set(theme_minimal())
+diag_tail <- list()
+
+for (gen in generations) {
+  key <- paste0(gen, "_tailspine")
+
+  if (!is.null(bayesian_models[[key]])) {
+    mod <- bayesian_models[[key]]
+    pp <- pp_check(mod, type = "dens_overlay") + ggtitle(paste("Posterior Predictive:", gen, "tailspine"))
+    trace <- mcmc_trace(as.array(mod), pars = c("b_Intercept", "b_treatmentinduced")) + ggtitle(paste("Traceplot:", gen, "tailspine"))
+    diag_tail[[length(diag_tail) + 1]] <- arrangeGrob(pp, trace, ncol = 2)
+  }
+
+  if (!is.null(linear_models[[key]])) {
+    mod <- linear_models[[key]]
+    resid_df <- data.frame(fitted = fitted(mod), resid = resid(mod))
+    qq_df <- data.frame(sample = resid(mod))
+
+    p1 <- ggplot(resid_df, aes(x = fitted, y = resid)) +
+      geom_point(alpha = 0.4) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      labs(title = paste("Residuals vs Fitted:", gen, "tailspine")) +
+      theme_minimal(base_size = 10)
+
+    p2 <- ggplot(qq_df, aes(sample = sample)) +
+      stat_qq() +
+      stat_qq_line() +
+      labs(title = paste("QQ Plot:", gen, "tailspine")) +
+      theme_minimal(base_size = 10)
+
+    diag_tail[[length(diag_tail) + 1]] <- arrangeGrob(p1, p2, ncol = 2)
+  }
+}
+
+grid.arrange(grobs = diag_tail, ncol = 1)
+
+
+
+
+
+
+```
+
+# **Discussion**
+
+Induced defenses in *Daphnia lumholtzi* are robust and age-specific, with early-life expression followed by regression. The persistence of these traits through four generations supports epigenetic inheritance, while their eventual disappearance aligns with evolutionary predictions. These findings challenge mutation-centric models of adaptation and underscore the role of environmental history in shaping phenotypes.
+
+# **Conclusions**
+
+Induced defenses in *Daphnia lumholtzi* are robust and age-specific, with early-life expression followed by regression. The persistence of these traits through four generations supports epigenetic inheritance, while their eventual disappearance aligns with evolutionary predictions. These findings challenge mutation-centric models of adaptation and underscore the role of environmental history in shaping phenotypes.
+
+# Reproducibility
+
+## Session Info
+
+```{r}
+#| label: session-info
+#| echo: true
+#| message: false
+#| warning: false
+
+# Print session info
+sessionInfo()
+
+```
+
+## Data and Code Availability
+
+#### All data and code used in this analysis are publicly available:
+
+-   **GitHub repository**: [https://github.com/](https://github.com/your-username/your-repo-name){.uri}shannonsnyder/\[repo\]
+-   **Dryad data archive**: [https://doi.org/10.5061/dryad.doi](https://doi.org/10.5061/dryad.your-doi){.uri}
