@@ -1,4 +1,5 @@
 cff-version: 1.2.0
+DOI: 10.5281/zenodo.19209353
 message: "If you use this dataset or code, please cite the associated paper."
 title: "Data and code for: Non-genetic inheritance of induced defense morphologies across multiple unexposed generations of Daphnia lumholtzi"
 type: dataset
