@@ -1,0 +1,206 @@
+---
+title: "Convert Figures to JPEG for JEB Submission"
+subtitle: "Pure format conversion — does NOT rerun analysis or change figure content"
+author: Shannon N. Snyder
+date: "`r Sys.Date()`"
+format:
+  html:
+    self-contained: true
+    toc: true
+execute:
+  echo: true
+  message: true
+  warning: false
+---
+
+# Overview
+
+This document converts all manuscript PNG figures to JPEG format at 800 DPI for submission
+to the Journal of Evolutionary Biology.
+
+**What this does:**
+
+- Reads each existing `.png` figure from `01.figures/final_revision_JEB_submission/`
+- Writes an identical `.jpg` version to `01.figures/final_revision_JEB_submission_jpeg/`
+- Sets DPI metadata to 800 in the output file
+- Does **not** rerun any statistical analysis or alter figure content
+- Figures 1 and 2 are handled separately (Figure1 is PNG, Figure2 is PDF already)
+
+**Accepted JEB formats:** `.jpeg`, `.jpg`, `.tiff`, `.pdf`, `.eps`
+
+---
+
+# Setup
+
+```{r}
+#| label: setup
+
+library(magick)
+library(here)
+
+# Output directory
+out_dir <- "../01.figures/final_revision_JEB_submission_jpeg"
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+cat("Output directory:", out_dir, "\n")
+```
+
+---
+
+# Figure 1 (PNG → JPEG)
+
+Figure 1 is a schematic imported as `Figure1@4x.png`. Converted here.
+
+```{r}
+#| label: convert-fig1
+
+fig1_in  <- "../01.figures/final_revision_JEB_submission/Figure1@4x.png"
+fig1_out <- file.path(out_dir, "Figure1.jpg")
+
+img <- image_read(fig1_in)
+img_info <- image_info(img)
+cat("Input:  ", fig1_in, "\n")
+cat("Pixels: ", img_info$width, "x", img_info$height, "\n")
+cat("DPI in: ", img_info$density, "\n")
+
+img_out <- image_convert(img, format = "jpeg")
+img_out <- image_write(img_out, path = fig1_out, quality = 95, density = "800")
+image_info(image_read(fig1_out))[, c("format","width","height","density")]
+cat("Saved →", fig1_out, "\n")
+```
+
+---
+
+# Figure 2 (PDF — already accepted format)
+
+Figure 2 is already a `.pdf`, which is accepted by JEB. It is copied as-is.
+
+```{r}
+#| label: copy-fig2
+
+fig2_in  <- "../01.figures/final_revision_JEB_submission/Figure2.pdf"
+fig2_out <- file.path(out_dir, "Figure2.pdf")
+file.copy(fig2_in, fig2_out, overwrite = TRUE)
+cat("Copied →", fig2_out, "(PDF — no conversion needed)\n")
+```
+
+---
+
+# Figures 3–7 (PNG → JPEG)
+
+```{r}
+#| label: convert-figs3-7
+
+main_figs <- list(
+  list(in_file = "Figure3_ontogenetic_trajectories_revised.png",
+       out_file = "Figure3_ontogenetic_trajectories_revised.jpg"),
+  list(in_file = "Figure4_predicted_spines_revised.png",
+       out_file = "Figure4_predicted_spines_revised.jpg"),
+  list(in_file = "Figure5_growth_rates_revised.png",
+       out_file = "Figure5_growth_rates_revised.jpg"),
+  list(in_file = "Figure6_size_selective_mortality_revised.png",
+       out_file = "Figure6_size_selective_mortality_revised.jpg"),
+  list(in_file = "Figure7_survival_GAM_revised.png",
+       out_file = "Figure7_survival_GAM_revised.jpg")
+)
+
+for (fig in main_figs) {
+  in_path  <- paste0("../01.figures/final_revision_JEB_submission/", fig$in_file)
+  out_path <- file.path(out_dir, fig$out_file)
+
+  img     <- image_read(in_path)
+  inf     <- image_info(img)
+  img_out <- image_convert(img, format = "jpeg")
+  image_write(img_out, path = out_path, quality = 95, density = "800")
+
+  inf_out <- image_info(image_read(out_path))
+  cat(sprintf("%-55s  %dx%d px  →  %s\n",
+              fig$in_file, inf$width, inf$height, out_path))
+}
+```
+
+---
+
+# Supplemental Figures S1–S7 (PNG → JPEG)
+
+```{r}
+#| label: convert-supp-figs
+
+supp_figs <- list(
+  list(in_file = "FigureS1_age_bodylength_revised.png",
+       out_file = "FigureS1_age_bodylength_revised.jpg"),
+  list(in_file = "FigureS2_headspine_diagnostics_revised.png",
+       out_file = "FigureS2_headspine_diagnostics_revised.jpg"),
+  list(in_file = "FigureS3_tailspine_diagnostics_revised.png",
+       out_file = "FigureS3_tailspine_diagnostics_revised.jpg"),
+  list(in_file = "FigureS4_linear_predictions_revised.png",
+       out_file = "FigureS4_linear_predictions_revised.jpg"),
+  list(in_file = "FigureS5_raw_spine_values_revised.png",
+       out_file = "FigureS5_raw_spine_values_revised.jpg"),
+  list(in_file = "FigureS6_predicted_spines_with_raw_revised.png",
+       out_file = "FigureS6_predicted_spines_with_raw_revised.jpg"),
+  list(in_file = "FigureS7_bodylength_diagnostics_revised.png",
+       out_file = "FigureS7_bodylength_diagnostics_revised.jpg")
+)
+
+for (fig in supp_figs) {
+  in_path  <- paste0("../01.figures/final_revision_JEB_submission/", fig$in_file)
+  out_path <- file.path(out_dir, fig$out_file)
+
+  img     <- image_read(in_path)
+  inf     <- image_info(img)
+  img_out <- image_convert(img, format = "jpeg")
+  image_write(img_out, path = out_path, quality = 95, density = "800")
+
+  cat(sprintf("%-60s  %dx%d px  →  %s\n",
+              fig$in_file, inf$width, inf$height, out_path))
+}
+```
+
+---
+
+# Verification
+
+Confirm all expected output files exist and are valid JPEGs.
+
+```{r}
+#| label: verify
+
+expected <- c(
+  "Figure1.jpg",
+  "Figure2.pdf",
+  "Figure3_ontogenetic_trajectories_revised.jpg",
+  "Figure4_predicted_spines_revised.jpg",
+  "Figure5_growth_rates_revised.jpg",
+  "Figure6_size_selective_mortality_revised.jpg",
+  "Figure7_survival_GAM_revised.jpg",
+  "FigureS1_age_bodylength_revised.jpg",
+  "FigureS2_headspine_diagnostics_revised.jpg",
+  "FigureS3_tailspine_diagnostics_revised.jpg",
+  "FigureS4_linear_predictions_revised.jpg",
+  "FigureS5_raw_spine_values_revised.jpg",
+  "FigureS6_predicted_spines_with_raw_revised.jpg",
+  "FigureS7_bodylength_diagnostics_revised.jpg"
+)
+
+results <- data.frame(
+  file   = expected,
+  exists = file.exists(file.path(out_dir, expected)),
+  size_kb = sapply(file.path(out_dir, expected), function(f) {
+    if (file.exists(f)) round(file.size(f) / 1024, 1) else NA
+  })
+)
+
+print(results, row.names = FALSE)
+
+n_ok  <- sum(results$exists)
+n_exp <- nrow(results)
+cat(sprintf("\n%d / %d files present in %s\n", n_ok, n_exp, out_dir))
+
+if (n_ok == n_exp) {
+  cat("All figures converted successfully. Ready for JEB submission.\n")
+} else {
+  missing <- results$file[!results$exists]
+  cat("MISSING files:\n")
+  cat(paste0("  - ", missing, "\n"))
+}
+```

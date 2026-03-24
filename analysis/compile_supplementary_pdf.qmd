@@ -1,0 +1,277 @@
+---
+title: "Supplementary Material"
+subtitle: |
+  Non-genetic inheritance of induced defense morphologies across multiple
+  unexposed generations of *Daphnia lumholtzi*
+author: "Snyder et al."
+date: "`r Sys.Date()`"
+format:
+  pdf:
+    documentclass: article
+    geometry: "margin=1in"
+    number-sections: false
+    toc: true
+    toc-depth: 2
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    colorlinks: true
+    keep-tex: false
+    header-includes: |
+      \usepackage{booktabs}
+      \usepackage{longtable}
+      \usepackage{float}
+      \usepackage{pdflscape}
+      \usepackage{caption}
+      \usepackage{graphicx}
+      \usepackage{adjustbox}
+      \captionsetup[figure]{labelfont=bf, skip=4pt}
+      \captionsetup[table]{labelfont=bf, skip=4pt}
+      \renewcommand{\arraystretch}{1.2}
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+csv_dir <- "../01.figures/final_revision_JEB_submission/tables_csv"
+
+read_tbl <- function(name) {
+  path <- file.path(csv_dir, paste0(name, ".csv"))
+  if (!file.exists(path)) return(NULL)
+  read.csv(path, header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+}
+
+render_tbl <- function(df, footnote_text = NULL) {
+  if (is.null(df)) {
+    cat("*Table not available. Re-run Revised_TransGenPheno_Analysis_v4_figures.qmd to regenerate.*\n\n")
+    return(invisible(NULL))
+  }
+  colnames(df) <- gsub("_", " ", colnames(df))
+  colnames(df) <- gsub("R2 ", "R\u00b2 ", colnames(df))
+
+  # escape = TRUE: auto-escapes % and other LaTeX special characters in data cells
+  tbl <- kable(df, booktabs = TRUE, linesep = "", escape = TRUE) %>%
+    kable_styling(
+      latex_options = c("scale_down", "hold_position", "striped"),
+      stripe_color  = "gray!8",
+      full_width    = FALSE,
+      font_size     = 8
+    ) %>%
+    row_spec(0, bold = TRUE)
+
+  if (!is.null(footnote_text)) {
+    # escape = TRUE: kableExtra auto-escapes any special chars in the footnote string
+    tbl <- tbl %>% kableExtra::footnote(general = footnote_text, general_title = "",
+                             footnote_as_chunk = TRUE, escape = TRUE)
+  }
+  tbl
+}
+
+fig_dir_jpeg <- "../01.figures/final_revision_JEB_submission_jpeg"
+fig_dir_png  <- "../01.figures/final_revision_JEB_submission"
+fig_path <- function(stem) {
+  jpg <- file.path(fig_dir_jpeg, paste0(stem, ".jpg"))
+  png <- file.path(fig_dir_png,  paste0(stem, ".png"))
+  if (file.exists(jpg)) jpg else png
+}
+```
+
+\newpage
+
+# Supplemental Tables
+
+## Supplemental Table 1 {-}
+
+```{r}
+#| label: tbl-s1
+#| tbl-cap: "Bayesian model convergence diagnostics. R-hat values near 1.00 and effective sample sizes (ESS) > 1000 indicate adequate convergence and posterior sampling reliability. All models demonstrated good convergence."
+
+render_tbl(
+  read_tbl("SuppTable1_Diagnostics"),
+  footnote_text = "R-hat < 1.01 and ESS > 1000 indicate good convergence."
+)
+```
+
+\newpage
+
+## Supplemental Table 2 {-}
+
+```{r}
+#| label: tbl-s2
+#| tbl-cap: "Linear mixed-effects model treatment effects on headspine and tailspine length across generations. Provided for comparison with Bayesian results (main Table 2). Both approaches yield qualitatively identical conclusions."
+
+render_tbl(read_tbl("SuppTable2_LinearResults"))
+```
+
+\newpage
+
+## Supplemental Table 3 {-}
+
+```{r}
+#| label: tbl-s3
+#| tbl-cap: "Goodness-of-fit diagnostics for linear mixed-effects models. AIC and BIC facilitate model comparison; marginal R-squared reflects variance explained by fixed effects, conditional R-squared by both fixed and random effects."
+
+render_tbl(read_tbl("SuppTable3_LinearDiagnostics"))
+```
+
+\newpage
+
+## Supplemental Table 4 {-}
+
+```{r}
+#| label: tbl-s4
+#| tbl-cap: "Generation-specific growth rate analysis. Mixed-effects models tested treatment effects on morphological growth rates (delta from previous timepoint) separately for each generation and trait. Model: delta ~ treatment + age + (1|individual). No significant treatment effects were detected in any generation."
+
+render_tbl(read_tbl("SuppTable4_Growth"))
+```
+
+\newpage
+
+## Supplemental Table 5 {-}
+
+```{r}
+#| label: tbl-s5
+#| tbl-cap: "Retrospective power analysis for the G5 generation. Effect sizes for headspine and tailspine were averaged across G3 and G4 and used to estimate power given G5 sample sizes (n = 8 control, n = 41 induced)."
+
+df_s5 <- read_tbl("SuppTable5_Power")
+if (is.null(df_s5)) {
+  cat("*Table not available.*\n\n")
+} else {
+  colnames(df_s5) <- gsub("_", " ", colnames(df_s5))
+  kable(df_s5, booktabs = TRUE, linesep = "", escape = TRUE) %>%
+    kable_styling(
+      latex_options = c("hold_position", "striped"),
+      stripe_color  = "gray!8",
+      full_width    = FALSE,
+      font_size     = 8
+    ) %>%
+    column_spec(1, width = "1.1in") %>%
+    column_spec(2, width = "1.0in") %>%
+    column_spec(3, width = "0.7in") %>%
+    column_spec(4, width = "0.7in") %>%
+    column_spec(5, width = "0.7in") %>%
+    column_spec(6, width = "1.0in") %>%
+    column_spec(7, width = "0.7in") %>%
+    row_spec(0, bold = TRUE) %>%
+    kableExtra::footnote(
+      general = "Avg Effect = mean treatment effect (G3 and G4). Cohen's d = standardized effect size",
+      general_title = "",
+      footnote_as_chunk = TRUE,
+      escape = TRUE
+    )
+}
+```
+
+\newpage
+
+# Supplemental Figures
+
+## Supplemental Figure 1 {-}
+
+```{r}
+#| label: fig-s1
+#| fig-cap: "Ontogenetic growth trajectories for *Daphnia* body length across treatments show high correlation between age and body length (Pearson's r = 0.85). Control: open circles; induced: filled circles. Growth patterns are similar between treatments, indicating that environmental induction principally affects defensive traits rather than somatic body size."
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "85%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS1_age_bodylength_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 2 {-}
+
+```{r}
+#| label: fig-s2
+#| fig-cap: "Bayesian model diagnostic plots for the headspine trait across generations. Each row = one generation (G0, G3, G4, G5). Columns show: posterior predictive check, residuals vs fitted values, MCMC traceplots, and Q-Q plots. Well-mixed chains, good posterior predictive overlap, and approximately normal residuals support model validity."
+#| fig-width: 14
+#| fig-height: 9
+#| out-width: "100%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS2_headspine_diagnostics_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 3 {-}
+
+```{r}
+#| label: fig-s3
+#| fig-cap: "Bayesian model diagnostic plots for the tailspine trait across generations. Same layout as Supplemental Figure 2. Stable, well-mixed MCMC chains and adequate posterior predictive checks support the validity of tailspine model estimates."
+#| fig-width: 14
+#| fig-height: 9
+#| out-width: "100%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS3_tailspine_diagnostics_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 4 {-}
+
+```{r}
+#| label: fig-s4
+#| fig-cap: "Predicted spine lengths from linear mixed-effects models for comparison with Bayesian results (main Fig. 4). Headspine (top) and tailspine (bottom) predicted means +/- SE for control and induced individuals across generations. Results are qualitatively consistent with the Bayesian analysis."
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: "85%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS4_linear_predictions_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 5 {-}
+
+```{r}
+#| label: fig-s5
+#| fig-cap: "Raw (uncorrected) morphological measurements for headspine (top) and tailspine (bottom). Mean +/- SE for control (empty circle) and induced (filled circle) individuals across G0, G3, G4, and G5. Note: not corrected for body length and violates independence assumptions due to repeated measures."
+#| fig-width: 10
+#| fig-height: 5
+#| out-width: "95%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS5_raw_spine_values_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 6 {-}
+
+```{r}
+#| label: fig-s6
+#| fig-cap: "Bayesian model-predicted spine lengths with individual observations overlaid. Mean estimates +/- SE (solid points) for headspine (top) and tailspine (bottom) across generations, with individual data points (grey jitter) shown for context."
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: "85%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS6_predicted_spines_with_raw_revised"))
+```
+
+\newpage
+
+## Supplemental Figure 7 {-}
+
+```{r}
+#| label: fig-s7
+#| fig-cap: "Bayesian model diagnostics for body length models across generations. Same four-panel layout as Supplemental Figures 2 and 3. Non-significant treatment effects and well-mixed chains confirm body length does not differ meaningfully between treatment groups."
+#| fig-width: 14
+#| fig-height: 9
+#| out-width: "100%"
+#| fig-align: center
+
+knitr::include_graphics(fig_path("FigureS7_bodylength_diagnostics_revised"))
+```
