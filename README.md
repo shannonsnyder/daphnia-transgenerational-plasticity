@@ -1,7 +1,7 @@
 # Non-genetic inheritance of induced defense morphologies across multiple unexposed generations of *Daphnia lumholtzi*
 
 **Authors:** Shannon N. Snyder, Walker C. Meyer, Shanie L. Jorgenson, Ethan B. Contreras, Tea Bland, William A. Cresko
-**Journal:** Journal of Experimental Biology
+**Journal:** Journal of Evolutionary Biology
 **Corresponding:** ssnyder3@uoregon.edu | wcresko@uoregon.edu
 
 ---
