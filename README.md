@@ -32,7 +32,7 @@ daphnia-transgenerational-plasticity/
 │   └── *.jpg                            # Raw microscopy photographs (Olympus DP74)
 ├── figures/
 │   ├── Figure1@4x.png                   # Experimental design schematic
-│   ├── Figure2.pdf                      # Life-history diagram
+│   ├── Figure2.pdf                      # Morphological measurements schematic
 │   ├── Figure3–7*.png                   # Main text figures
 │   └── FigureS1–S7*.png                # Supplementary figures
 ├── tables/
